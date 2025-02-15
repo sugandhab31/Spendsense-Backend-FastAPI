@@ -7,19 +7,20 @@ from database import SessionLocal, engine
 from sqlalchemy.orm import Session
 
 app = FastAPI()
+models.Base.metadata.create_all(bind = engine)
 
 class ExpensesBase(BaseModel):
-    expense_id = int,
-    expense_name = str,
-    expense_amount = int,
-    expense_currency = str,
-    expense_category_id = int,
-    expense_date = datetime, 
+    expense_id: int
+    expense_name: str
+    expense_amount: int
+    expense_currency: str
+    expense_category_id: int
+    expense_date: datetime
 
 class CategoryBase(BaseModel):
-    category_id = int,
-    category_name = str,
-    custom_category = bool
+    category_id: int
+    category_name: str
+    custom_category: bool
 
 def get_db():
     db = SessionLocal()
@@ -28,10 +29,10 @@ def get_db():
     finally:
         db.close()
 
-db_dependency = Annotated(Session, db = Depends(get_db))
+db_dependency = Annotated[Session, Depends(get_db)]
 
 @app.post('/addexpense/')
-def addexpense(expenses = ExpensesBase, db = db_dependency):
+def addexpense(expenses: ExpensesBase, db: db_dependency):
     db_expense = models.expenses(
         expense_id = expenses.expense_id,
         expense_name = expenses.expense_name,
