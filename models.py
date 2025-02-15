@@ -1,15 +1,17 @@
-from sqlalchemy import Boolean, Integer, Column, ForeignKey, String, Index, DateTime
+from sqlalchemy import Boolean, Integer, Column, ForeignKey, String, Numeric, DateTime
 from database import Base
+from datetime import datetime
+import uuid
 
 class expenses(Base):
     __tablename__ = 'expenses'
 
-    expense_id = Column(Integer, primary_key = True, index = True)
-    expense_name = Column(String)
-    expense_amount = Column(Integer)
-    expense_currency = Column(String)
-    expense_category_id = Column(Integer)
-    expense_date = Column(DateTime, server_default=("NOW()"))
+    expense_id = Column(String, primary_key = True, default=lambda: str(uuid.uuid4()))
+    expense_name = Column(String, nullable = False)
+    expense_amount = Column(Numeric(10,2), nullable = False)
+    expense_currency = Column(String, nullable = False)
+    expense_category_id = Column(Integer, nullable = False)
+    expense_date = Column(DateTime, default = datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
 class category(Base):
     __tablename__ = 'category'

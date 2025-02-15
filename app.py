@@ -10,12 +10,10 @@ app = FastAPI()
 models.Base.metadata.create_all(bind = engine)
 
 class ExpensesBase(BaseModel):
-    expense_id: int
     expense_name: str
     expense_amount: int
     expense_currency: str
     expense_category_id: int
-    expense_date: datetime
 
 class CategoryBase(BaseModel):
     category_id: int
@@ -33,14 +31,15 @@ db_dependency = Annotated[Session, Depends(get_db)]
 
 @app.post('/addexpense/')
 def addexpense(expenses: ExpensesBase, db: db_dependency):
-    db_expense = models.expenses(
-        expense_id = expenses.expense_id,
-        expense_name = expenses.expense_name,
-        expense_amount = expenses.expense_amount,
-        expense_currency = expenses.expense_currency,
-        expense_category_id = expenses.expense_category_id,
-        expense_date = expenses.expense_date
-        )
-    db.add(db_expense)
-    db.commit()
-
+    try:
+        db_expense = models.expenses(
+            expense_name = expenses.expense_name,
+            expense_amount = expenses.expense_amount,
+            expense_currency = expenses.expense_currency,
+            expense_category_id = expenses.expense_category_id,
+            )
+        db.add(db_expense)
+        db.commit()
+    except Exception as e:
+        print(e)
+    
