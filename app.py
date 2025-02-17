@@ -6,6 +6,7 @@ import models
 from database import SessionLocal, engine, get_db
 from sqlalchemy.orm import Session
 import auth
+import uvicorn
 
 app = FastAPI()
 models.Base.metadata.create_all(bind = engine)
@@ -54,3 +55,5 @@ def createuser(user_from_UI: UserBase, db: db_dependency):
     
 
 
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)

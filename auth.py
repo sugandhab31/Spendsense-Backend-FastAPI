@@ -28,8 +28,6 @@ class UserInDB(User): #Extend the public user model with the hashed password fie
     hashed_password: str
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")    #Create a CryptContext that uses the bcrypt algorithm to hash and verify passwords.
-db_dependency = Annotated(Session, Depends(get_db))
-
 
 def get_user(username: str, user_password: str, db):
     try:
@@ -51,7 +49,7 @@ def get_user(username: str, user_password: str, db):
     except Exception as e:
         return {
             'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
-            'message': 'Internal error occured.'
+            'message': 'Internal error occured. User could not be retrieved.'
         }
 
 def verify_password(password: str, hashed_password: str, db):
@@ -70,7 +68,7 @@ def verify_password(password: str, hashed_password: str, db):
     except Exception as e:
         return {
             'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
-            'message': 'Internal error occured.'
+            'message': 'Internal error occured. Password could not be verified.'
         }
 
 def adduser(user: User_Model, hashed_password_from_user: str, db):
@@ -90,7 +88,7 @@ def adduser(user: User_Model, hashed_password_from_user: str, db):
     except Exception as e:
         return {
             'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
-            'message': 'Internal error occured.'
+            'message': 'Internal error occured. User could not be created.'
         }
     
 def get_password_hash(password: str):
