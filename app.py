@@ -1,10 +1,11 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, status
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Annotated
 import models
-from database import SessionLocal, engine
+from database import SessionLocal, engine, get_db
 from sqlalchemy.orm import Session
+import auth
 
 app = FastAPI()
 models.Base.metadata.create_all(bind = engine)
@@ -20,12 +21,11 @@ class CategoryBase(BaseModel):
     category_name: str
     custom_category: bool
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+class UserBase(BaseModel):
+    username: str
+    password: str
+    fullname: str
+    diabled: bool
 
 db_dependency = Annotated[Session, Depends(get_db)]
 
@@ -41,5 +41,16 @@ def addexpense(expenses: ExpensesBase, db: db_dependency):
         db.add(db_expense)
         db.commit()
     except Exception as e:
-        print(e)
+        return e
+
+@app.post('/createuser/')
+def createuser(user_from_UI: UserBase, db: db_dependency):
+    try:
+        hashed_password = auth.get_password_hash(user_from_UI.password)
+        result = auth.adduser(user_from_UI, hashed_password, db)
+        return result
+    except Exception as e:
+        return e
     
+
+

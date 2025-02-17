@@ -19,3 +19,12 @@ class category(Base):
     category_id = Column(Integer, primary_key = True, index = True)
     category_name = Column(String)
     custom_category = Column(Boolean)
+
+
+class User:
+    __tablename__ = 'users'
+
+    username = Column(String, primary_key = True)
+    hashed_password = Column(String)
+    fullname = Column(String)
+    disabled = Column(Boolean)
