@@ -18,6 +18,9 @@ SessionLocal = sessionmaker(autoflush = False, autocommit = False, bind = engine
 
 Base = declarative_base()
 
+# declarative_base() returns a new base class that holds a catalog of classes and mapped tables.
+# Any class that inherits from Base becomes a mapped class, meaning it corresponds to a table in the database.
+
 def get_db():
     db = SessionLocal()
     try:

@@ -22,7 +22,7 @@ class TokenData(BaseModel): #Represents the data extracted from a decoded JWT.
 class User_Model(BaseModel): #Define the public user model (information that you can share with clients).
     username: str
     fullname: Optional[str] = None
-    diabled: Optional[bool] = None
+    disbled: Optional[bool] = None
 
 class UserInDB(User): #Extend the public user model with the hashed password field, which is stored internally in the database.
     hashed_password: str

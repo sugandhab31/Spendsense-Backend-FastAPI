@@ -21,7 +21,7 @@ class category(Base):
     custom_category = Column(Boolean)
 
 
-class User:
+class User(Base):
     __tablename__ = 'users'
 
     username = Column(String, primary_key = True)
