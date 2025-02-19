@@ -24,6 +24,7 @@ class category(Base):
 class User(Base):
     __tablename__ = 'users'
 
+    user_id = Column(String, primary_key = True, default=lambda: str(uuid.uuid4()))
     username = Column(String, primary_key = True)
     hashed_password = Column(String)
     fullname = Column(String)

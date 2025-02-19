@@ -1,37 +1,24 @@
 from fastapi import FastAPI, HTTPException, Depends, status
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import timedelta
 from typing import Annotated
 import models
 from database import SessionLocal, engine, get_db
 from sqlalchemy.orm import Session
 import auth
 import uvicorn
+import basemodels
 
 app = FastAPI()
 models.Base.metadata.create_all(bind = engine)
 
-class ExpensesBase(BaseModel):
-    expense_name: str
-    expense_amount: int
-    expense_currency: str
-    expense_category_id: int
-
-class CategoryBase(BaseModel):
-    category_id: int
-    category_name: str
-    custom_category: bool
-
-class UserBase(BaseModel):
-    username: str
-    password: str
-    fullname: str
-    diabled: bool
+# This base class contains a metadata attribute (Base.metadata), which collects information about all the tables and models defined.
+# You use Base.metadata.create_all(engine) to create all tables in the database according to the defined models.
 
 db_dependency = Annotated[Session, Depends(get_db)]
 
 @app.post('/addexpense/')
-def addexpense(expenses: ExpensesBase, db: db_dependency):
+def addexpense(expenses: basemodels.ExpensesBase, db: db_dependency):
     try:
         db_expense = models.expenses(
             expense_name = expenses.expense_name,
@@ -45,7 +32,7 @@ def addexpense(expenses: ExpensesBase, db: db_dependency):
         return e
 
 @app.post('/createuser/')
-def createuser(user_from_UI: UserBase, db: db_dependency):
+def createuser(user_from_UI: basemodels.UserBase, db: db_dependency):
     try:
         hashed_password = auth.get_password_hash(user_from_UI.password)
         result = auth.adduser(user_from_UI, hashed_password, db)
@@ -53,7 +40,28 @@ def createuser(user_from_UI: UserBase, db: db_dependency):
     except Exception as e:
         return e
     
-
+@app.post("/token", response_model=basemodels.Token)
+async def login_for_access_token(db: db_dependency ,form_data: auth.OAuth2PasswordRequestForm = Depends()):
+    user_details = auth.get_user(form_data.username, form_data.password, db)
+    if type(user_details):
+        raise HTTPException(
+            status_code = status.HTTP_401_UNAUTHORIZED,
+            detail = "Incorrect username or password",
+            headers = {
+                "WWW-Authenticate":"Bearer"
+            }
+        )
+    access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRY_MINUTES)
+    access_token = auth.create_access_token(
+        data = {
+            'subject': user_details.username
+        },
+        expires_delta = access_token_expires
+    )
+    return {
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
