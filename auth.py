@@ -3,6 +3,7 @@ import json
 from passlib.context import CryptContext
 from database import get_db, engine, SessionLocal
 from sqlalchemy.orm import Session
+from sqlalchemy import update
 import App
 import basemodels
 from models import User
@@ -14,7 +15,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 SECRET_KEY = "secret-key"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRY_MINUTES = 30
+ACCESS_TOKEN_EXPIRY_MINUTES = 10
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")    #Create a CryptContext that uses the bcrypt algorithm to hash and verify passwords.
 
@@ -32,9 +33,9 @@ def get_user(username: str, user_password: str, db):
             password_validated = verify_password(password = user_password, hashed_password = db_hashed_password, db = db)
             if password_validated['status'] == 200:
                 return {
-                'status': status.HTTP_200_OK,
-                'error': None,
-                'body': json(user_details)
+                    'status': status.HTTP_200_OK,
+                    'error': None,
+                    'body': user_details
             }
 
     except Exception as e:
@@ -94,10 +95,10 @@ def get_password_hash(password: str):
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     try: 
         to_encode = data.copy()
-        expire = datetime.now() + (expires_delta or timedelta(minutes=15))
-        to_encode.update({
-            "expiry": expire
-        })
+        # expire = datetime.now() + (expires_delta or timedelta(minutes=15))
+        # to_encode.update({
+        #     "expiry": expire
+        # })
         encode_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
         return encode_jwt
     except Exception as e:
@@ -105,5 +106,71 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-def update_user_token(userid, token, db):
-    return None
+def update_user_token(userid, token, expiry_timestamp,db):
+    try:
+        user = db.query(User).filter(User.username == userid).update({
+            "session_token": token, "expiry_timestamp": expiry_timestamp
+        })
+        db.commit()
+        if user:
+            return {
+                'status': status.HTTP_201_CREATED,
+                'error': None,
+                'body': 'Session Token Updated'
+            }
+    except Exception as e:
+        return {
+            'status': status.HTTP_502_BAD_GATEWAY,
+            'error': e,
+            'body': None
+        }
+    
+
+def validate_user_exists(userid, db):
+    try:
+        user_details = db.query(User).filter(User.username == userid).first()
+        if not user_details:
+            return {
+                'status': status.HTTP_404_NOT_FOUND,
+                'error': 'User not found.',
+                'body': None
+            }
+        else:
+            return {
+                    'status': status.HTTP_200_OK,
+                    'error': None,
+                    'body': user_details
+            }
+
+    except Exception as e:
+        return {
+            'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
+            'message': 'Internal error occured. User could not be retrieved.',
+            'body': None
+        }
+
+def check_active_session(user_details):
+    if user_details['body'].expiry_timestamp <= (datetime.now()+timedelta(minutes=ACCESS_TOKEN_EXPIRY_MINUTES)):
+        return True
+    else:
+        return False
+    
+
+def update_token_expiry(userid, expiry_timestamp,db):
+    try:
+        user = db.query(User).filter(User.username == userid).update({
+            "expiry_timestamp": expiry_timestamp
+        })
+        db.commit()
+        if user:
+            return {
+                'status': status.HTTP_200_OK,
+                'error': None,
+                'body': 'Session Expiry Updated'
+            }
+    except Exception as e:
+        return {
+            'status': status.HTTP_502_BAD_GATEWAY,
+            'error': e,
+            'body': None
+        }
