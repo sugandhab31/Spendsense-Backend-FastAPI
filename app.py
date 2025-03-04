@@ -43,7 +43,7 @@ def createuser(user_from_UI: basemodels.UserBase, db: db_dependency):
 @app.post("/token", response_model=basemodels.Token)
 async def login_for_access_token(db: db_dependency ,form_data: auth.OAuth2PasswordRequestForm = Depends()):
     user_details = auth.get_user(form_data.username, form_data.password, db)
-    if type(user_details):
+    if user_details.body is None:
         raise HTTPException(
             status_code = status.HTTP_401_UNAUTHORIZED,
             detail = "Incorrect username or password",
@@ -51,17 +51,29 @@ async def login_for_access_token(db: db_dependency ,form_data: auth.OAuth2Passwo
                 "WWW-Authenticate":"Bearer"
             }
         )
-    access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRY_MINUTES)
-    access_token = auth.create_access_token(
-        data = {
-            'subject': user_details.username
-        },
-        expires_delta = access_token_expires
-    )
-    return {
-        "access_token": access_token,
-        "token_type": "bearer"
-    }
+    try:
+        access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRY_MINUTES)
+        access_token = auth.create_access_token(
+            data = {
+                'subject': user_details.username
+            },
+            expires_delta = access_token_expires
+        )
+
+        return {
+            'status': status.HTTP_200_OK,
+            'body':{
+                "access_token": access_token,
+                "token_type": "bearer"
+            },
+            'error': None
+        }
+    except Exception as e:
+        return {
+                'status': status.HTTP_401_UNAUTHORIZED,
+                'error': 'Unable to generate token',
+                'body': None
+            }
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

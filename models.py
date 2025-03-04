@@ -29,3 +29,5 @@ class User(Base):
     hashed_password = Column(String)
     fullname = Column(String)
     disabled = Column(Boolean)
+    session_token = Column(String)
+    expiry_timestamp = Column(DateTime)

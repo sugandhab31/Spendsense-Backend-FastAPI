@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, status
+import json
 from passlib.context import CryptContext
 from database import get_db, engine, SessionLocal
 from sqlalchemy.orm import Session
@@ -23,18 +24,24 @@ def get_user(username: str, user_password: str, db):
         if not user_details:
             return {
                 'status': status.HTTP_404_NOT_FOUND,
-                'message': 'User not found.'
+                'error': 'User not found.',
+                'body': None
             }
         else:
             db_hashed_password = user_details.hashed_password
             password_validated = verify_password(password = user_password, hashed_password = db_hashed_password, db = db)
             if password_validated['status'] == 200:
-                return user_details
+                return {
+                'status': status.HTTP_200_OK,
+                'error': None,
+                'body': json(user_details)
+            }
 
     except Exception as e:
         return {
             'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
-            'message': 'Internal error occured. User could not be retrieved.'
+            'message': 'Internal error occured. User could not be retrieved.',
+            'body': None
         }
 
 def verify_password(password: str, hashed_password: str, db):
@@ -43,17 +50,20 @@ def verify_password(password: str, hashed_password: str, db):
         if not result:
             return {
                 'status': status.HTTP_404_NOT_FOUND,
-                'message': 'Invalid Password.'
+                'message': 'Invalid Password.',
+                'body': None                
             }
         else:
             return {
                 'status': status.HTTP_200_OK,
-                'message': 'Valid Password.'
+                'message': 'Valid Password.',
+                'body': None
             }
     except Exception as e:
         return {
             'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
-            'message': 'Internal error occured. Password could not be verified.'
+            'message': 'Internal error occured. Password could not be verified.',
+            'body': None
         }
 
 def adduser(user: basemodels.UserBase, hashed_password_from_user: str, db):
@@ -68,12 +78,14 @@ def adduser(user: basemodels.UserBase, hashed_password_from_user: str, db):
         db.commit()
         return {
             'status': status.HTTP_201_CREATED,
-            'message': 'New User Created'
+            'message': 'New User Created',
+            'body': None
         }
     except Exception as e:
         return {
             'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
-            'message': 'Internal error occured. User could not be created.'
+            'message': 'Internal error occured. User could not be created.',
+            'body': None
         }
     
 def get_password_hash(password: str):
@@ -93,3 +105,5 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
+def update_user_token(userid, token, db):
+    return None
