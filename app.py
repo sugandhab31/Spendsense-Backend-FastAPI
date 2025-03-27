@@ -96,7 +96,7 @@ async def create_session(db: db_dependency ,form_data: auth.OAuth2PasswordReques
     
 @app.get("/getexpenses/")
 def getexpenses():
-    Request.headers
+    pass
     
 
 if __name__ == "__main__":
