@@ -150,11 +150,13 @@ def validate_user_exists(userid, db):
         }
 
 def check_active_session(user_details):
-    if user_details['body'].expiry_timestamp <= (datetime.now()+timedelta(minutes=ACCESS_TOKEN_EXPIRY_MINUTES)):
-        return True
-    else:
-        return False
-    
+    try:
+        if user_details['body'].expiry_timestamp <= (datetime.now()+timedelta(minutes=ACCESS_TOKEN_EXPIRY_MINUTES)):
+            return True
+        else:
+            return False
+    except Exception as e:
+        return e
 
 def update_token_expiry(userid, expiry_timestamp,db):
     try:
@@ -168,6 +170,29 @@ def update_token_expiry(userid, expiry_timestamp,db):
                 'error': None,
                 'body': 'Session Expiry Updated'
             }
+    except Exception as e:
+        return {
+            'status': status.HTTP_502_BAD_GATEWAY,
+            'error': e,
+            'body': None
+        }
+    
+def verify_token(userid, token_from_header, db):
+    try:
+        user = db.query(User).filter(User.username == userid).first()
+        # issessionactive = get_user(userid)
+        if user.session_token == token_from_header and check_active_session(user):
+            return {
+                'status': status.HTTP_200_OK,
+                'error': None,
+                'body': 'Token is valid'
+            }
+        else:
+            return {
+                'status': status.HTTP_401_UNAUTHORIZED,
+                'error': 'Invalid Token',
+                'body': None
+        }
     except Exception as e:
         return {
             'status': status.HTTP_502_BAD_GATEWAY,
