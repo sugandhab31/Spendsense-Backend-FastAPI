@@ -1,17 +1,12 @@
-from fastapi import FastAPI, Depends, HTTPException, status
-import json
+from fastapi import status
 from passlib.context import CryptContext
-from utils.database import get_db, engine, SessionLocal
-from sqlalchemy.orm import Session
-from sqlalchemy import update
-import App
 import models.basemodels as basemodels
 from models.models import User
 from typing import Optional
 from datetime import timedelta, datetime
 from jose import JWTError, jwt
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-
+from fastapi.security import OAuth2PasswordBearer
+from dao import user_dao 
 
 SECRET_KEY = "secret-key"
 ALGORITHM = "HS256"
@@ -21,7 +16,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")    #Create a C
 
 def get_user(username: str, user_password: str, db):
     try:
-        user_details = db.query(User).filter(User.username == username).first()
+        user_details = user_dao.get_user_by_username(db=db, username=username)
         if not user_details:
             return {
                 'status': status.HTTP_404_NOT_FOUND,
@@ -120,7 +115,7 @@ def update_user_token(userid, token, expiry_timestamp,db):
             }
     except Exception as e:
         return {
-            'status': status.HTTP_502_BAD_GATEWAY,
+            'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
             'error': e,
             'body': None
         }
@@ -145,18 +140,36 @@ def validate_user_exists(userid, db):
     except Exception as e:
         return {
             'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
-            'message': 'Internal error occured. User could not be retrieved.',
+            'error': e,
             'body': None
         }
 
-def check_active_session(user_details):
+def check_active_session(userid, token_from_header, db):
     try:
-        if user_details['body'].expiry_timestamp <= (datetime.now()+timedelta(minutes=ACCESS_TOKEN_EXPIRY_MINUTES)):
-            return True
-        else:
+        scheme, token = token_from_header.split()
+        # payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        # return payload
+        user = db.query(User).filter(User.username == userid).first()
+        expiry_timestamp = user.expiry_timestamp
+        if expiry_timestamp is None:
             return False
+        if user.session_token == token:
+            if expiry_timestamp <= (datetime.now()+timedelta(minutes=ACCESS_TOKEN_EXPIRY_MINUTES)):
+                return True
+            else:
+                return False
+        else:
+            return {
+                'status': status.HTTP_401_UNAUTHORIZED,
+                 'error': 'Invalid Token',
+                 'body': None
+            }
     except Exception as e:
-        return e
+        return {
+            'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
+            'error': e,
+            'body': None
+        }
 
 def update_token_expiry(userid, expiry_timestamp,db):
     try:
@@ -172,30 +185,7 @@ def update_token_expiry(userid, expiry_timestamp,db):
             }
     except Exception as e:
         return {
-            'status': status.HTTP_502_BAD_GATEWAY,
-            'error': e,
-            'body': None
-        }
-    
-def verify_token(userid, token_from_header, db):
-    try:
-        user = db.query(User).filter(User.username == userid).first()
-        # issessionactive = get_user(userid)
-        if user.session_token == token_from_header and check_active_session(user):
-            return {
-                'status': status.HTTP_200_OK,
-                'error': None,
-                'body': 'Token is valid'
-            }
-        else:
-            return {
-                'status': status.HTTP_401_UNAUTHORIZED,
-                'error': 'Invalid Token',
-                'body': None
-        }
-    except Exception as e:
-        return {
-            'status': status.HTTP_502_BAD_GATEWAY,
+            'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
             'error': e,
             'body': None
         }

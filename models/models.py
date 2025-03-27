@@ -1,5 +1,5 @@
 from sqlalchemy import Boolean, Integer, Column, ForeignKey, String, Numeric, DateTime
-from utils.database import Base
+from dao.db_config import Base
 from datetime import datetime
 import uuid
 
