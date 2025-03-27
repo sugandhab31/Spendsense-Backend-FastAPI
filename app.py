@@ -13,18 +13,7 @@ models.Base.metadata.create_all(bind = engine)
 # This base class contains a metadata attribute (Base.metadata), which collects information about all the tables and models defined.
 # You use Base.metadata.create_all(engine) to create all tables in the database according to the defined models.
 
-db_dependency = Annotated[Session, Depends(get_db)]
-    
-'''
-{
-  "username": "string",
-  "password": "string",
-  "repeat_password": "string",
-  "fullname": "string",
-  "disbled": true
-}
-'''
-    
+db_dependency = Annotated[Session, Depends(get_db)] 
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000) 
