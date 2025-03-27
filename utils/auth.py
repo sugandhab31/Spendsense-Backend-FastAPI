@@ -1,12 +1,12 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 import json
 from passlib.context import CryptContext
-from database import get_db, engine, SessionLocal
+from utils.database import get_db, engine, SessionLocal
 from sqlalchemy.orm import Session
 from sqlalchemy import update
 import App
-import basemodels
-from models import User
+import models.basemodels as basemodels
+from models.models import User
 from typing import Optional
 from datetime import timedelta, datetime
 from jose import JWTError, jwt

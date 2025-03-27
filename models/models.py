@@ -1,5 +1,5 @@
 from sqlalchemy import Boolean, Integer, Column, ForeignKey, String, Numeric, DateTime
-from database import Base
+from utils.database import Base
 from datetime import datetime
 import uuid
 
@@ -19,7 +19,6 @@ class category(Base):
     category_id = Column(Integer, primary_key = True, index = True)
     category_name = Column(String)
     custom_category = Column(Boolean)
-
 
 class User(Base):
     __tablename__ = 'users'

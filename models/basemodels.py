@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ValidationError, BeforeValidator, AfterValidator, model_validator
 from typing import Optional, Annotated
-import models
+import models.models as models
 import re
 from typing_extensions import Self
 

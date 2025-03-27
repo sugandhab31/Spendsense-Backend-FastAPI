@@ -1,6 +1,6 @@
-import models
-import auth
-import basemodels
+import models.models as models
+import utils.auth as auth
+import models.basemodels as basemodels
 from App import db_dependency
 from fastapi import Request, APIRouter
 

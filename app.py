@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends
 from typing import Annotated
-import models
-from database import engine, get_db
+import models.models as models
+from utils.database import engine, get_db
 from sqlalchemy.orm import Session
 import uvicorn
 from routes.expenses import router as expenses_router

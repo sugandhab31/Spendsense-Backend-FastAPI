@@ -1,5 +1,5 @@
-import auth
-import basemodels
+import utils.auth as auth
+import models.basemodels as basemodels
 from App import db_dependency
 from fastapi import Request, APIRouter, HTTPException, status, Request
 from datetime import timedelta, datetime
