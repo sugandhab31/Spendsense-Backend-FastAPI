@@ -64,25 +64,18 @@ def verify_password(password: str, hashed_password: str, db):
 
 def adduser(user: basemodels.UserBase, hashed_password_from_user: str, db):
     try:
-        db_user = User(
-        username = user.username,
-        fullname = user.fullname,
-        hashed_password = hashed_password_from_user,
-        disabled = False
-        )
-        db.add(db_user)
-        db.commit()
-        return {
-            'status': status.HTTP_201_CREATED,
-            'message': 'New User Created',
-            'body': None
+        user_dict = {
+            "username": user.username,
+            "fullname": user.fullname,
+            "hashed_password": hashed_password_from_user,
+            "disabled": False
         }
+        res = user_dao.create_user(db, user_dict)
+        if res is not None:
+            return res   
     except Exception as e:
-        return {
-            'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
-            'message': 'Internal error occured. User could not be created.',
-            'body': None
-        }
+        
+        return None
     
 def get_password_hash(password: str):
     return pwd_context.hash(password)
@@ -90,10 +83,6 @@ def get_password_hash(password: str):
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     try: 
         to_encode = data.copy()
-        # expire = datetime.now() + (expires_delta or timedelta(minutes=15))
-        # to_encode.update({
-        #     "expiry": expire
-        # })
         encode_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
         return encode_jwt
     except Exception as e:
@@ -108,22 +97,14 @@ def update_user_token(userid, token, expiry_timestamp,db):
         })
         db.commit()
         if user:
-            return {
-                'status': status.HTTP_201_CREATED,
-                'error': None,
-                'body': 'Session Token Updated'
-            }
+            return True
     except Exception as e:
-        return {
-            'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
-            'error': e,
-            'body': None
-        }
+        return e
     
 
-def validate_user_exists(userid, db):
+def validate_user_exists(username, db):
     try:
-        user_details = db.query(User).filter(User.username == userid).first()
+        user_details = user_dao.get_user_by_username(db, username)
         if not user_details:
             return {
                 'status': status.HTTP_404_NOT_FOUND,
@@ -144,12 +125,12 @@ def validate_user_exists(userid, db):
             'body': None
         }
 
-def check_active_session(userid, token_from_header, db):
+def check_active_session(username, token_from_header, db):
     try:
         scheme, token = token_from_header.split()
         # payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         # return payload
-        user = db.query(User).filter(User.username == userid).first()
+        user = user_dao.get_user_by_username(db, username)
         expiry_timestamp = user.expiry_timestamp
         if expiry_timestamp is None:
             return False

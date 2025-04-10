@@ -14,7 +14,17 @@ def createuser(user_from_UI: basemodels.UserBase, db: db_dependency):
     try:
         hashed_password = auth.get_password_hash(user_from_UI.password)
         result = auth.adduser(user_from_UI, hashed_password, db)
-        return result
+        if result is not None:
+            return {
+                    'status': status.HTTP_201_CREATED,
+                    'message': 'New User Created',
+                    'body': result
+                }
+        return {
+            'status': status.HTTP_400_BAD_REQUEST,
+            'error': None,
+            'body': 'Could not create user.'
+        }
     except Exception as e:
         return e
     

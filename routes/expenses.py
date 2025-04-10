@@ -4,7 +4,7 @@ import models.basemodels as basemodels
 from fastapi import Request, APIRouter, Depends
 from typing import Annotated
 from sqlalchemy.orm import Session
-from utils.database import get_db
+from dao.db_config import get_db
 
 router = APIRouter()
 db_dependency = Annotated[Session, Depends(get_db)] 
